@@ -11,8 +11,97 @@
 \section{Summary}
 This paper focused on the viability of creating programs which did not subvert the programs control flow.
 It did so by exploiting some of the same vulnerabilities that control flow attacks did, but using them to instead corrupt data structures which would allow the attacker to escalate their privileges through normal control flow.
-Several of these exploits were demonstrated, and current defenses were evaluated to see if they would have been prevented or detected.
-
+Several of these exploits were demonstrated against real software which can be expected to be used to gain root access.
+Current defenses were then considered to see if they would have prevented or detected these attacks.
 \section{Attacks}
-
+Several attacks were demonstrated on several open source software.
+These attacks made use of known exploits which have been used in other attacks before.
+There were two methods of performing privilege escalation - one was corrupting system call parameters,
+and the other prevented checks on user input from validating the data correctly.
+\subsection{System Call Parameter Attacks}
+This set of attacks was by far the most numerous,
+and likely most prominent vulnerability in real software.
+It depends on system call parameters being corruptable after verification of them has occured.\\
+The first attack targeted a widely used FTP server which has a format string vulnerability.
+This attack corrupted data containing the user ID,
+and allowed a somewhat trusted user to gain root access to the machine in a covert manner.\\
+The second attack targeted a heap corruption vulnerability in the Null HTTPD server.
+This attack aimed not for root access, but the privilege level of the server itself.
+This worked by overwriting the CGI-BIN path,
+which allowed the attacker to execute any program the server has access to.
+They correctly claim the privilege level limitation does not make this type of attack inapplicable,
+as they can then use the server's privileges to perform more attacks.\\
+The third attack was on Telnet,
+and used another heap vulnerability to overwrite several system call parameters to gain root access.
+I take some issue with this attack in that there are many easier methods for attacking Telnet servers.\\
+The fourth attack was on another HTTP server, GHTTPD.
+This attack used a stack overflow vulnerability
+\subsection{Validation Attacks}
+This paper only considered one attack on the validation of user input,
+namely one for SSH.
+This attack appears to have been used in the past,
+though the authors wrote their own implementation to be certain it only used a non-control data attack.
+This attack used an integer overflow to overwrite a validation variable.
+This validation variable was not set again, even when validation failed.
+Thus, SSH would check the validation variable and think it had been successful.
+The attack succeeded on a proof of concept level,
+but was then defeated by future SSH DES checksum validation.
+Given that the previous attack seems to have succeeded in this matter as well,
+this seems like a viable attack.
+\section{Defenses}
+The authors then went on to consider several defenses in current use.
+Unfortunately they do not seem to have actually tested these defenses against their attacks,
+but for many of them it seems clear that they will not prevent the vulnerabilities from being exploited.
+They began with IDS systems and various extensions of them,
+concluding that they were largely incapable of preventing these types of attacks.
+Likely due to my lack of knowledge of how certain IDS extensions work,
+it's not clear to me from the paper that this is correct.
+Specifically, it seems that the push-down automaton model which validates the system call order as well as the stack state would potentially be able to prevent or at least detect the system call parameter attacks.
+This is because there are certain expectations of the system call parameters which the attackers are violating.
+For example, the FTP attack changed the cached UID to be 0.
+Assuming a programmer aware of best security practices,
+there could be a constraint that the parameter never be 0.
+If this was violated, the stack state would be violated,
+and the IDS could thwart the attack.
+Similar defenses could be in place for the other parameter attacks as well.
+The authors do concede that statistical models of a programs normal system calls could prevent this from occuring in some cases,
+and make specific note of the HTTPD CGI-BIN attacks.
+This is believable, though it seems limited in that it would be harder to use statistics to prevent the first attack,
+as that changed the parameter to be 0, which is used elsewhere in the program.\\
+Several Control Data Protection techniques and non-executable memory protections were also considered.
+It's not clear why, though, as they are explicitly not for this type of vulnerability.
+They work in a way which prevents them from being of any use in preventing non-control attacks.\\
+The authors then consider memory safety enforcement programs,
+which prevent buffer over/under-flows from occuring in the first place.
+This is nice, as these are the basis for the majority of vulnerabilities.
+The authors conclude that many of them will prevent this type of attack,
+but come at a significant performance cost.
+The authors point out that these techniques will not work well for legacy code, either.
+Thus, these defenses are not adequate for preventing non-control data attacks.\\
+The authors also mention other methods, such as {\it StackGuard}, and claim similar methods will fail to prevent these attacks.
+This seems unfair, in that it doesn't seem unreasonable to expect most security critical data will be in different frames than the current one.
+Nevertheless, the authors are correct it will not prevent all attacks.
+They do mention {\it FormatGuard} will prevent format string attacks.\\
+Other techniques, such as {\it PointGuard} are shown to be lacking in that they cannot protect precompiled library code from attacks.\\
+Address Space Randomization is also considered to not be good enough,
+though I believe the reasons behind their conclusion could be improved.
+Instead of pointing to the lack of entropy,
+they would probably be better served by looking at the potential for memory disclosures of valid addresses.
+It would be difficult for an attacker to use the low entropy of ASLR to correctly guess the location of valid pages when they only get one chance.
+On the other hand, they could disclose memory locations using another attack,
+and then build their attack with that knowledge.\\
+They finish their analyses by considering a more complete taint detection technique called {\it Taint Check}.
+They note that this defense has problems with false positives,
+which can make it difficult to determine if an attack is actually occuring.
+They also note it's significant performance impact will impede adoption,
+and conclude further work is needed before it can be a general defense against this type of attack.
+\section{Conclusions}
+This work showed that non-data control attacks are viable and should be considered in the future.
+However, it also shows that these attacks are much more difficult to construct than traditional data control attacks.
+It seems reasonable to conclude that further work should be done in preventing these types of attacks,
+but not so much at the expense of preventing traditional attacks.
+It is also worth noting that these attacks made use of the same failures which lead to traditional attacks.
+Thus, it definitely seems that more work should be done in detecting and preventing these faults in the first place.\\
+Other work that would be nice to see would actually test various defenses against these attacks.
+The current consideration is mostly good, but not entirely convincing.
 \end{document}
