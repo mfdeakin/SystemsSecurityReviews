@@ -5,16 +5,51 @@
 
 \title{Phoneypot Review}
 \author{Michael Deakin}
-
 \begin{document}
 \maketitle
 \section{Summary}
 This paper gave an overview of the implementation of a phone system honeypot.
-It differentiated the implementation from traditional honeypots by addressing specific challenges inherent in detecting new sources of illegitimate phone use.
-These challenges included legal issues, infrastructure issues, and dataset issues.\\
+The goals of setting up this phoneypot all related to improving existing datasets of sources of illegitimate phone usage.
+The implementation sought to improve completeness, accuracy, and timeliness of the datasets.
+It differentiated the implementation from traditional honeypots by addressing specific challenges inherent in detecting illegitimate phone use.
+These challenges included legal, infrastructure, and expense issues.\\
 Legal issues were largely a result of two-party consent laws, which require both parties consent to record phone calls.
 Though these laws are only in some states, they must still be respected by a phoneypot in a state without them in case the caller is in one with them.
 This prevents a high level of interaction with the caller by the phoneypot, making it more difficult to distinguish between legitimate and illegitimate phone uses.\\
 There are several issues related to the infrastructure.
 Probably the largest is that the space of phone numbers is limited.
+This prevents phoneypots from setting up a very large number of addresses for attracting telephony abuse.
+It also makes it more difficult to rule out the potential of being misdialed.\\
+Another issue related to the infrastructure is the cost of connecting to the network.
+Due to the large expense in setting up cell towers, phone lines, and network cables, most options for connecting to the network are costly.
+In particular, connecting on a phone line or to the cellphone network is very expensive;
+as the phone line connection and multiplexing hardware are not cheap to build or maintain.\\
+These issues do not exist for traditional honeypots,
+and make implementation more difficult.\\
+
+\section{Criticisms}
+This paper seemed pretty reasonable to me,
+in that it detailed a method for setting up a phoneypot system.
+The main thing I worry about is the way they make conclusions from the data they took.
+Their conclusions are based on various T-Tests on their data, with various sample sizes.
+My first concern is the potential P-hacking in this paper,
+which is simply due to the number of things they tested for significance.
+Essentially, testing a dataset for a large number of things guarantees you'll eventually find something significant.
+It's not clear to me that this happened, or if they employed measures to prevent this from happening.
+My other concern is that the size of the samples used in their T-Tests seems very small,
+especially compared to their data-set size.
+The most used in any of the tests is 51, and some of them are smaller.
+It's not clear why this is; when selecting a random sample and performing these computations is cheap.
+I am somewhat worried they used the same set of 51 for 3 of thir tests,
+which would make P-Hacking more likely.\\
+A minor concern is that the less than 10\% of the source phone numbers detected were in the FTC dataset.
+There are several reasons this could occur,
+largely related to people not knowing about their ability to report telephony abuse.
+Somewhat more disconcerting is that less than 30\% of the FTC's dataset showed up in the phoneypot's list of sources.
+I suspect this is because of a number of telephony abusers have already listed the numbers chosen as abandoned, and no longer target them.
+\section{Extensions}
+There are a few things I would consider doing to improve their current phoneypot.
+The first, and potentially most difficult, would be to perform real-time processing of the phone calls.
+Doing this should make it possible to classify calls as misdials or actual abuse.
+This would not involve recording the call, so it should be safe from legal issues.
 \end{document}
