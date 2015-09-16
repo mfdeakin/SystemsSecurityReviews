@@ -11,7 +11,56 @@
 \section{Summary}
 This paper developed a set of machine learning methods to try and identify URL's which host malicious exploit kits.
 The authors looked at several kits to try and determine what relevant features might be used to identify whether a website was malicious or not.
-\section{Exploit Kits}
-11 prominent exploit kits were used to determine potentially relevant features and to create a classifier based on them.
-
+Several 11 prominent exploit kits were probed to determine potentially relevant features and to create a classifier based on them.
+These features included the number of identification probes, number of redirections,
+the sizes of various types of content, and various attack attempts.
+They then used 500 URLs known to host one of these 11 exploit kits and 500 URLs known to host benign websites and measured these features.
+The collected features were then used to train 5 different machine learning methods.
+The testing set consisted of 512 URLs known to be hosting one of the 11 exploit kits and 1117 URLs hosting benign websites.
+The classification results were very similar to the results on the training data.
+To compare WebWinnow to prior work, they took 100 URLs known to host various exploit kits,
+and ran it through WebWinnow and Wepawet.
+The results on this set seem more like one would expect to see on a testing set for machine learning algorithms.
+\section{Criticisms}
+My primary concern stems from the fact that the testing set results seem to be too good to be true for classification results.
+Essentially, I believe there is a problem with their choice to train only 11 exploit kits with what appears to be a fixed load out of plugins on IE6.
+Because of their fixed setup, a given exploit kit can probably be expected to react in one of a few different attacks.
+This would probably cause the classifiers to be overly fit to these specific exploit kits,
+given the number of features is similar to the number of kits.
+As a result, their classifier is not at all generalized to detecting exploit kits,
+and is instead only detecting these specific kits.
+The fact that their results are very similar for the training set and the testing set lends credence to this.
+Furthermore, when they compared WebWinnow to Wepawet,
+their results did not come anywhere close to the performance they got on the testing set.
+I would expect their results to be more similar to their comparison results than their testing set results.\\
+Another concern that I have is that it's not clear their comparison with Wepawet is fair.
+Both tests had an occasional failure, and the authors speculate that some of them could have been from exploit kits blocking Wepawet.
+To make this a fair comparison, the authors should probably separate out the URLs that failed for one of methods.
+Without this it's not clear that the WebWinnow performed significantly better than Wepawet,
+as the difference in the number of sites classified as benign was only 4 out of 100.\\
+Another thing I'm worried about is what appears to be an inherent bias in the data towards short-lived exploit kits.
+Since they appear to only counting the URLs hosting various kits to determine which are the most prominent,
+they will necessairily consider many more short lived kits relative to the longer lived ones.
+Thus, it's not clear to me that the kits listed as the most prominent are the ones that should be focused on.
+\section{Extensions}
+Since my first criticism was the largest, I will focus on that.
+Since the exploit kits they chose were some of the most prominent,
+it would be difficult to add large numbers of other kits to the test.
+Instead, I would suggest varying the browser, plugins installed,
+and the operating system would be an easier solution.
+Because this can be done with virtual machine images,
+this should not be too difficult to implement;
+though the short lifetimes of the kits may cause some minor issues for non-automated systems.\\
+The second extension I would propose was previously explained as a way to improve their comparison with existing detection methods.
+Making more than one comparison would also be better, I think.\\
+Finally, I'd like to see some method of estimating the total number of infections by a specific exploit kit.
+This seems like a much more useful statistic than the number of URLs hosting a specific exploit kit,
+as it would give us a better idea what types of features should be targetted to prevent the most number of infections.
+\section{Conclusions}
+This paper developed what appears to be a reasonable method of detecting whether a URL hosts an exploit kit.
+Though there are some issues with the implementation of the testing,
+some serious concerns with overfitting, and some issues with the presentation of the comparison,
+it seemed to do at least as well as one other contemporary method.
+These concerns mean that the algorithm will have to be continuously trained against new exploit kits to remain effective,
+but so long as the number of prominent kits remains small, that should be a minor issue.
 \end{document}
