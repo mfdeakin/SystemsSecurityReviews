@@ -1,0 +1,73 @@
+
+\documentclass{article}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+
+\title{Review of `PinDr0p: Using Single-Ended Audio Features to Determine Call Provenance`}
+\author{Michael Deakin}
+
+\begin{document}
+\maketitle
+This paper discusses a signal based method of call provenance.
+It makes no assumptions about the accuracy of the information on the source of the phone call,
+and instead uses the actual audio signal to identify the types of phone networks the signal traversed.
+To do this, distinguishing features between signals which have travelled over specific types of networks are identified.
+These are statistical features, so the resulting data on them is then classified by a machine learning algorithm.
+The types of networks identified include VoIP with speech encoded with G.711, Speex, or iLBC,
+cellular networks encoded with GSM-FR,
+and dedicated PSTN networks encoded with G.711.
+\section{VoIP Features}
+One of the major distinguishing features of VoIP is that packets are frequently lost.
+Thus, to detect a VoIP network, it makes sense to look for parts of the signal which are zeroed out,
+where other information suggests it shouldn't be.
+To do this, the Short Time Average Energy function is used, with a Hamming window function.
+\begin{figure}[h]
+  \[ E_n=\sum_{m=-\infty}^{\infty}y^2(m) w(n-m) \]
+  \caption{Short Time Average Energy}
+\end{figure}
+\begin{figure}[h]
+  \[ w(n)=\alpha - \beta \cos\Big(\frac{2\pi n}{N - 1}\Big) \]
+  \caption{Hamming Window Function}
+\end{figure}
+Since packets contain at least 10 ms of audio represented by 80 samples of speech,
+choosing a window length less than 80 samples causes multiple values of $E_n$ can be affected by a dropped packet.
+This allows us to detect dropped packets by looking for a falling edge, a floor, and a rising edge.
+If any of these characteristics are missing, it's not clear if a packet loss has occured,
+and these packet drops cannot be detected with this method.
+A test of this method on $15 s$ of audio showed a high correspondence between detected dropped packets and actual dropped packets.\\
+Packet drops also tell us the codec used in the VoIP network.
+The distinguishing feature is the length of the floor resulting from the dropped packet.
+iLBC encodes $30 ms$ per packet, and Speex encodes $20 ms$ per packet.
+G.729 encodes $10 ms$ per packet by default, and G.711 encodes $20 ms$ per packet by default;
+so it is usually safe to assume these floor lengths correspond to these codec types.
+Furthermore, since the case of multiple consecutive packets being dropped is rarer than a single packet being dropped,
+the most frequent floor length will have a high correspondence with the codec type.\\
+Some VoIP networks use a reactive recovery measure to detect lost packets and try to give a credible output signal.
+This is done in one of several ways: Outputting silence, outputting noise,
+and performing an interpolation based on previous packets.
+The STE method described previously is capable of detecting the first two, with only an adjustment of the signal floor.
+Unfortunately, the third method is the most common one, making detection more difficult;
+but not impossible since these methods are generally deterministic.
+This makes a detection a simple matter of looking at correlations between previous packets and the current one.\\
+G.711 performs waveform substitution, repeating part of the previous packet, and is easy to detect.\\
+iLBC uses a linear predictive coding method based on the source filter model of speech production.
+This method inverse-filters the voiced sounds, leaving behind the original sound energy residual.
+iLBC uses the residual, synthesis filters, and a dynamic codebook to compress the audio signal.
+When a packet is lost, the decoder uses the residual from the previous signal,
+and adds a random excitation to it.
+It creates a new pitch synchronous residual {\bf(What is that?)} for the packet to be concealed.\\
+To detect PLC in iLBC
+{\bf(How do we know it's iLBC at this point? Is this indiscriminantly applied?
+  Or is it guessed based on the improbability of other codecs being used?)},
+the audio is split into $30 ms$ packets, as that is the default for iLBC.
+The pitch synchronous residual is created from each packet and compared to the previous one.
+The pitch synchronous residual is not usually highly correlated,
+so a high correlation between these packets implies that the current one was lost
+{\bf(How much does misalignment of the lost packet and the assumed packet affect this correlation?
+  In the worst case, the guessed packets are exactly out of phase with the real packets.
+  What is the expected correlation then,
+  and how does it compare to the normal amount of correlation between two consecutive packets?
+  Or is there a mechanism to detect when this happens and realign the guessed packets?)}.
+
+\end{document}
