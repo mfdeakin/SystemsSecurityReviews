@@ -68,6 +68,92 @@ so a high correlation between these packets implies that the current one was los
   In the worst case, the guessed packets are exactly out of phase with the real packets.
   What is the expected correlation then,
   and how does it compare to the normal amount of correlation between two consecutive packets?
-  Or is there a mechanism to detect when this happens and realign the guessed packets?)}.
-
+  Or is there a mechanism to detect when this happens and realign the guessed packets?
+  Also, what happens in the case of two consecutive lost packets?
+  Does it not try to conceal the second lost packet, or does it reuse the last received one?
+  Does this occur frequently enough for it to be useful?)}.
+In a test, this method only detected about $20\%$ of the concealed packets
+{\bf(This does not bode well for my alignment concerns.
+  But are they a problem that doesn't have another solution?
+  If the entire audio is collected, or atleast from the start,
+  will the alignment always be correct?)}.\\
+{\bf Figure 8 shows the number of concealed packets detected at various packet loss rates.
+  At $0\%$, the number of detected PLCs is very similar to $1\%$,
+  but the number of detected PLCs at $5\%$ is entirely within the rates for the previous loss rates.
+  Is an adaptive threshold being used to detect PLCs?
+  If not, why is the number detected at $5\%$ entirely contained within the others?
+  Only 40 $15 s$ samples were used in this test, so it could just be errors.
+  Some quick math shows that ~25 packets should be lost in the $5\%$ case,
+  and only ~5 in the $1\%$ case.
+  At a $20\%$ detection rate from the original test,
+  ~5 PLCs should be detected in the $5\%$ case, and ~1 in the $~1\%$ case.
+  For $10\%$, ~50 packets should be lost, and ~10 PLCs should be detected.
+  Only ~5 PLCs are detected though, suggesting much more testing is needed before conclusions can be drawn.
+  Finally, the fact that any PLCs were detected at a loss rate of $0\%$
+  is proof of a moderately large number of false positives.
+  Thus, I don't any claim can be made yet of the actual loss rate based on this algorithm,
+  especially at low loss rates.
+  I'm also concerned about the ability to classify iLBC encoded data as VoIP as a result of this.}
+\section{Noise Profiling}
+PSTN and cellular networks have a very different problem which allows them to be identified.
+The G.711 codec is typically used in PSTN networks, and does not use any compression.
+This means noise is only introduced in the network (in low amounts),
+and when the speech is being captured, due to imperfect microphones (most of the noise).
+As a result, the noise is highly correlated to the signal.
+This is multiplicative noise,
+and its presence can be determined by the spectral level range and spectral level deviation.
+The spectral clarity for this codec is also very high.
+Spectral clarity quantifies the perceptible call quality of a network and codec
+{\bf(What is spectral clarity?
+  Is it a measure of how quickly the spectrum falls off?
+  It's clearly classifiable by a machine, so there must be a mathematical relationship.)}.\\
+Cellular networks, on the other hand, are bandwidth limited,
+and use the compression codec GSM-FR.
+This codec significantly reduces the spectral clarity of the signal.
+\section{Classification}
+A multi-label classifier using C4.5 decision trees is trained using speech samples.
+C4.5 decision trees outperformed other classifiers such as Naive Bayes and Neural Networks in this task.
+The features used are the packet loss detection output (codec + packet loss rate),
+the PLC detection output (codec + packet concealment count),
+the noise spectral metrics, and the P.563 scoring output (MOS score).
+The P.563 is a single ended quality tool to obtain call quality metrics.
+This helps determine how many different networks the call traversed,
+as the call quality degrades with each transition
+{\bf(Is this always true? Does a call degrade further after going through every type of network?)}.\\
+This classification determines which networks the signal has traversed.
+The classification does not determine the order of the networks that the signal traversed.
+However, it does prevent adversaries from using VoIP to anonymously call large numbers of people pretending to be a local bank.
+\section{Evaluation}
+The evaluation is based on the accuracy of the classifier and the ability to consistently identify a call source.
+This is performed by training the classifier with a set of speech samples subjected to representative traversal signals and degradations.
+This includes converting between codecs with PJSIP, introducing noise, and losing packets where applicable.
+Calls are assumed to traverse at most 3 networks.
+\section{Classification Results}
+A reduction technique is needed to convert a multi-label classification into a single label.
+The reduction techniques compared are Binary Relevance (BR), Label Power set (LP), and Random k-Labelsets (RAkEL).
+10-fold cross validation was then used to measure the accuracy under these techniques
+{\bf(What is 10-fold cross validation?
+  Divide the training set into 10 groups, then train 10 classifiers, each excluding one group.
+  The resulting classifiers are then compared)}
+The Hamming loss, accuracy, precision, and recall
+of the classifiers with different reduction techniques was then compared.
+RAkEL ended up with the best scores overall.
+\section{Testing}
+Various users each made 10 calls to the testbed in Atlanta from 16 different locations in the world.
+The calls each lasted about $20 s$, from which features and profiles were extracted.
+This was chosen as it was more than the $15 s$ required for the P.563 scoring.
+$N$ of the 10 call sets were used to train a nueral network classifier,
+where $N$ was varied between 1 and 5.
+Even with only 1 of the 16 calls labeled,
+the remaining 5 sets of calls are identified with the correct source label correctly $90\%$ of the time.
+{\bf(The confusion matrix shows the call source label to be the location the call was made from.
+  I would not expect this result to hold when more locations are added.
+  How many calls total were in a single set? This is not given, but should be.)}.
+Interestingly, local Vonage calls were more distinguishable by the high spectral level range than by the packet loss profile.
+\section{Limitations}
+Packet loss characteristics were heavily relied upon to differentiate VoIP fingerprints.
+This means the system is vulnerable to temporary network issues.\\
+Each source was associated with a single finger-print, explaining how they were able to identify the source so well.\\
+Newer codecs have been introduced and are gaining traction,
+and should be considered in future work.
 \end{document}
